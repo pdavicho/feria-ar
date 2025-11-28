@@ -3,60 +3,51 @@ import { storage, db } from '../firebase-config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-const ArExperience = ({ onGoToGallery }) => {
+const ArExperience = ({ selectedAvatar, onGoToGallery, onBack }) => {
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
 
-  // Manejar selección de foto
-  const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setPreview(URL.createObjectURL(e.target.files[0]));
-    }
-  };
-
-  // Manejar subida a Firebase
-  const handleUpload = async () => {
+  // ESTA FUNCIÓN SE ACTIVA APENAS EL USUARIO ELIGE LA FOTO
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
+
+    // INICIO DE SUBIDA AUTOMÁTICA
     setUploading(true);
     try {
       const fileName = `feria_${Date.now()}.jpg`;
       const storageRef = ref(storage, `fotos_feria/${fileName}`);
       
-      // 1. Subir imagen
+      // 1. Subir
       await uploadBytes(storageRef, file);
-      // 2. Obtener URL
+      // 2. URL
       const url = await getDownloadURL(storageRef);
-      // 3. Guardar en Base de Datos
+      // 3. Firestore (Guardamos qué avatar era también)
       await addDoc(collection(db, "galeria"), {
         url: url,
+        avatar: selectedAvatar.name,
         createdAt: serverTimestamp()
       });
 
-      alert("¡Foto subida con éxito!");
-      setFile(null);
-      setPreview(null);
-      onGoToGallery(); // Ir a la galería automáticamente
+      alert("¡Foto guardada! 🚀");
+      onGoToGallery(); 
+
     } catch (error) {
       console.error(error);
-      alert("Error al subir");
-    } finally {
-      setUploading(false);
+      alert("Error al subir. Intenta de nuevo.");
+      setUploading(false); // Solo quitamos el loading si falla
     }
   };
 
   return (
     <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2>📸 Zona de Experiencia AR</h2>
+      <button onClick={onBack} style={{ float: 'left', background: 'none', border: 'none', fontSize: '20px' }}>⬅</button>
+      <h3>{selectedAvatar.name}</h3>
       
-      {/* COMPONENTE MODEL-VIEWER */}
-      {/* Asegúrate de poner tu archivo .glb en la carpeta 'public' del proyecto */}
-      <div style={{ border: '1px solid #ddd', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
+      {/* MODEL VIEWER DINÁMICO */}
+      <div style={{ border: '1px solid #ddd', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px', backgroundColor: 'white' }}>
         <model-viewer
-          src="/avatarCaricatura.glb" 
-          ios-src="/avatar.usdz"
-          alt="Avatar Rumiñahui"
+          src={selectedAvatar.file} 
+          alt={selectedAvatar.name}
           ar
           ar-modes="scene-viewer webxr quick-look"
           camera-controls
@@ -64,49 +55,48 @@ const ArExperience = ({ onGoToGallery }) => {
           style={{ width: '100%', height: '400px' }}
         >
             <button slot="ar-button" style={{
-                backgroundColor: 'white', borderRadius: '4px', border: 'none', 
-                position: 'absolute', top: '16px', right: '16px', padding: '10px', fontWeight: 'bold'
+                backgroundColor: 'white', borderRadius: '20px', border: 'none', 
+                position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+                padding: '10px 20px', fontWeight: 'bold', boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
             }}>
-              👋 Ver en tu espacio
+              📸 Ver en AR
             </button>
         </model-viewer>
       </div>
 
-      <div style={{ backgroundColor: '#f9f9f9', padding: '20px', borderRadius: '10px' }}>
-        <h3>Pasos:</h3>
-        <ol style={{ textAlign: 'left' }}>
-            <li>Toca el botón <strong>"Ver en tu espacio"</strong>.</li>
-            <li>Acomoda el avatar y toma la foto con tu celular.</li>
-            <li>Vuelve aquí y sube esa foto.</li>
-        </ol>
-
-        <input 
-          type="file" 
-          accept="image/*" 
-          id="fileInput" 
-          style={{ display: 'none' }} 
-          onChange={handleFileChange} 
-        />
+      <div style={{ backgroundColor: '#e9ecef', padding: '20px', borderRadius: '15px' }}>
+        <p style={{marginBottom: '15px'}}>¿Ya te tomaste la foto?</p>
         
-        <button 
-          onClick={() => document.getElementById('fileInput').click()}
-          style={{ padding: '10px 20px', fontSize: '16px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', width: '100%', marginBottom: '10px' }}
-        >
-          📂 Seleccionar Foto
-        </button>
-
-        {preview && (
-          <div>
-            <img src={preview} alt="Previsualización" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', margin: '10px 0' }} />
-            <br/>
-            <button 
-              onClick={handleUpload}
-              disabled={uploading}
-              style={{ padding: '10px 20px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '5px' }}
-            >
-              {uploading ? 'Subiendo...' : '🚀 Publicar en Galería'}
-            </button>
-          </div>
+        {uploading ? (
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#007bff' }}>
+                Subiendo foto... ⏳
+            </div>
+        ) : (
+            <>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  id="cameraInput" 
+                  style={{ display: 'none' }} 
+                  onChange={handleFileSelect} 
+                />
+                
+                <button 
+                  onClick={() => document.getElementById('cameraInput').click()}
+                  style={{ 
+                    padding: '15px 20px', 
+                    fontSize: '18px', 
+                    backgroundColor: '#28a745', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '50px', 
+                    width: '100%', 
+                    boxShadow: '0 4px 0 #218838'
+                  }}
+                >
+                  📤 Subir foto recién tomada
+                </button>
+            </>
         )}
       </div>
     </div>

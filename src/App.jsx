@@ -1,28 +1,48 @@
 import React, { useState } from 'react';
+import AvatarMenu from './components/AvatarMenu';
 import ArExperience from './components/ArExperience';
 import Gallery from './components/Gallery';
 
 function App() {
-  const [view, setView] = useState('ar'); // 'ar' o 'gallery'
+  const [view, setView] = useState('menu'); // 'menu', 'ar', 'gallery'
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+
+  // Navegación
+  const handleSelectAvatar = (avatar) => {
+    setSelectedAvatar(avatar);
+    setView('ar');
+  };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <header style={{ backgroundColor: '#222', color: 'white', padding: '15px', textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '1.2rem' }}>Rumiñahui AR Experience</h1>
+    <div style={{ maxWidth: '600px', margin: '0 auto', fontFamily: 'Segoe UI, sans-serif', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      
+      {/* Header Fijo */}
+      <header style={{ backgroundColor: '#343a40', color: 'white', padding: '15px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+        <h1 style={{ margin: 0, fontSize: '1.2rem' }}>RumiAR Experience</h1>
       </header>
 
       <main>
-        {view === 'ar' ? (
+        {view === 'menu' && (
           <>
-            <ArExperience onGoToGallery={() => setView('gallery')} />
-            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                <button onClick={() => setView('gallery')} style={{ background: 'transparent', border: '1px solid #333', padding: '10px', borderRadius: '5px' }}>
+            <AvatarMenu onSelectAvatar={handleSelectAvatar} />
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+                <button onClick={() => setView('gallery')} style={{ textDecoration: 'underline', background: 'none', border: 'none', color: '#666' }}>
                     Ver Galería Pública
                 </button>
             </div>
           </>
-        ) : (
-          <Gallery onBack={() => setView('ar')} />
+        )}
+
+        {view === 'ar' && selectedAvatar && (
+          <ArExperience 
+            selectedAvatar={selectedAvatar} 
+            onGoToGallery={() => setView('gallery')} 
+            onBack={() => setView('menu')}
+          />
+        )}
+
+        {view === 'gallery' && (
+          <Gallery onBack={() => setView('menu')} />
         )}
       </main>
     </div>
