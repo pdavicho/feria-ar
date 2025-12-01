@@ -49,7 +49,9 @@ const ArExperience = ({ selectedAvatar, onGoToGallery, onBack }) => {
           src={selectedAvatar.file} 
           alt={selectedAvatar.name}
           ar
-          ar-modes="scene-viewer webxr quick-look"
+          ar-modes="webxr scene-viewer quick-look"
+          ar-scale="fixed"
+          render-scale="2"
           camera-controls
           shadow-intensity="1"
           style={{ width: '100%', height: '400px' }}
